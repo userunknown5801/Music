@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>404 Error</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0f13">
+<style>
+/* ============================================================
+   Rainbow 404 Page with ImGui-style sliders + Mastering Panel
+   Added Mastering Panel (left of Clock Size) — NEW CODE ADDED
+   Comments inside code blocks are in English per user preference.
+   ============================================================ */
+
+body {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+}
+
+/* Glitch title */
+.glitch {
+  position: relative;
+  font-size: 80px;
+  font-weight: bold;
+  text-transform: uppercase;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 6s linear infinite, blinkBW 2s infinite;
+  margin: 0;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: #000;
+  background: #fff;
+  overflow: hidden;
+  clip: rect(0, 900px, 0, 0);
+}
+.glitch::before {
+  left: 2px;
+  text-shadow: -2px 0 red, 2px 0 orange, -2px 0 yellow, 2px 0 green, -2px 0 blue, 2px 0 indigo, -2px 0 violet;
+  animation: glitch 2s infinite linear alternate-reverse;
+}
+.glitch::after {
+  left: -2px;
+  text-shadow: -2px 0 violet, 2px 0 indigo, -2px 0 blue, 2px 0 green, -2px 0 yellow, 2px 0 orange, -2px 0 red;
+  animation: glitch 1.5s infinite linear alternate-reverse;
+}
+
+/* Subtext */
+.rainbow-blink {
+  position: relative;
+  font-size: 28px;
+  font-weight: bold;
+  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 5s linear infinite, blinkOpacity 2s infinite;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.rainbow-blink::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.9), transparent);
+  animation: shine 3s infinite;
+}
+
+/* Play label */
+.rainbow-text {
+  position: relative;
+  font-size: 28px;
+  font-weight: bold;
+  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowShift 5s linear infinite;
+  margin-top: 18px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.rainbow-text::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.9), transparent);
+  animation: shine 3s infinite;
+}
+
+/* Buttons
+   Apply the same rainbow glow animation used by the clock.
+*/
+.rainbow-btn {
+  position: relative;
+  margin: 8px;
+  padding: 12px 20px;
+  font-size: 18px;
+  font-weight: bold;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  animation: rainbowShift 6s linear infinite;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 0 15px rgba(255,255,255,0.7);
+  overflow: hidden;
+}
+.rainbow-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.8), transparent);
+  animation: shine 3s infinite;
+}
+.rainbow-btn:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255,255,255,1); }
+.rainbow-btn:active { transform: scale(1.08); }
+
+/* Clock */
+:root {
+  --clock-width: 420px;
+  --clock-height: 90px;
+  --clock-font: 26px;
+  --panel-width: 260px;
+  --panel-height: 200px;
+}
+#clock {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--clock-width);
+  height: var(--clock-height);
+  font-size: var(--clock-font);
+  font-weight: bold;
+  color: white;
+  border-radius: 60px;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  animation: rainbowShift 6s linear infinite, rainbowGlow 3s ease-in-out infinite alternate;
+  margin: 18px auto;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+#clock:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(255,255,255,1);
+}
+
+/* Controls base style (used by Clock Size panel and Mastering Panel) */
+.controls {
+  position: absolute;
+  top: 20px;
+  background: rgba(20,20,20,0.85);
+  color: #eee;
+  padding: 12px;
+  border-radius: 8px;
+  width: 260px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.4);
+  font-size: 13px;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  cursor: default;
+  user-select: none;
+  touch-action: none;
+}
+/* Keep two separate positions: mastering on left, clock controls on right */
+#masteringControls { left: 20px; }
+#controls { right: 20px; }
+
+/* when minimized */
+.controls.minimized { height: 36px; overflow: hidden; padding: 6px; width: 160px; }
+.controls-header { display:flex; justify-content: space-between; align-items: center; cursor: grab; padding: 2px 4px; }
+.minimize-btn {
+  background: #333; color:#fff; border:none; border-radius:4px; width:24px; height:24px; cursor:pointer; font-weight:bold;
+}
+/* Apply same rainbow glow as the clock to all panels */
+.controls {
+  animation: rainbowShift 8s linear infinite;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(255,255,255,0.2);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: absolute;
+}
+
+.controls::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  animation: rainbowShift 8s linear infinite;
+  z-index: -1;
+  filter: blur(8px) brightness(1.2);
+  opacity: 0.7;
+}
+/* Inner ImGui controls */
+.controls h4 { margin:0 0 8px 0; font-size:14px; letter-spacing:0.6px; }
+.control-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; }
+.control-row label { min-width:48px; font-weight:600; color:#ddd; }
+.control-row .range-wrap { flex:1; position:relative; display:flex; align-items:center; }
+
+/* Range (slider) base styles */
+.control-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  outline: none;
+  box-shadow: inset 0 0 14px rgba(255,255,255,0.05), 0 0 12px rgba(0,0,0,0.12);
+  padding: 0;
+  margin: 0 8px 0 0;
+  position: relative;
+  z-index: 1;
+  animation: rainbowShift 6s linear infinite;
+}
+
+/* Add an animated glossy 'shining' highlight using wrapper pseudo-element */
+.control-row .range-wrap::after{
+  content:"";
+  position:absolute;
+  top:-6px;
+  left:-60%;
+  width:60%;
+  height:24px;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.9), transparent);
+  transform: skewX(-20deg);
+  filter: blur(6px);
+  animation: rangeShine 3s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.95;
+}
+
+/* Thumb (handle) styling for webkit */
+.control-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.75);
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(250,250,250,0.7));
+  box-shadow: 0 0 12px rgba(255,255,255,0.6), 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+  margin-top: -5px;
+}
+
+/* Thumb for Firefox */
+.control-row input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.75);
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(250,250,250,0.7));
+  box-shadow: 0 0 12px rgba(255,255,255,0.6), 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+/* Value box next to sliders */
+.ctrl-value { width:44px; text-align:right; font-family:monospace; color:#fff; background:rgba(255,255,255,0.04); padding:4px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.03); }
+.ctrl-actions { display:flex; gap:8px; margin-top:10px; }
+.button-reset, .button-copy { background:#2b2b2b; color:#fff; border:1px solid rgba(255,255,255,0.05); padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; }
+.button-reset:hover, .button-copy:hover { transform: translateY(-1px); }
+
+/* Preset grid styling inside mastering panel */
+.preset-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:6px; }
+.preset { background: rgba(255,255,255,0.02); padding:8px 10px; border-radius:8px; cursor:pointer; text-align:left; border:1px solid rgba(255,255,255,0.02); }
+/* rainbow border with working animation + glow synced to clock */
+.preset.selected {
+  position: relative;
+  z-index: 0; /* keep pseudo-elements behind content */
+  overflow: hidden; /* prevent glow overflow */
+  border-radius: 10px; /* match preset button shape */
+  background: linear-gradient(90deg, red, orange, yellow, green, cyan, blue, violet, red);
+  background-size: 400% 400%; /* make gradient move smoothly */
+  animation: rainbowBorder 4s linear infinite, rainbowGlow 6s ease-in-out infinite;
+  filter: brightness(1.0);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.12);
+}
+
+/* dark inner layer */
+.preset.selected::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: #1a1a1a;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+/* Mastering panel content area scroll */
+.mastering-content { max-height: calc(var(--panel-height,220px)); overflow-y: auto; padding-right:10px; }
+
+/* Keyframes */
+@keyframes rainbowShift { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+@keyframes blinkBW { 0%,50%,100%{color:#000;} 25%,75%{color:#fff;} }
+@keyframes blinkOpacity { 0%,50%,100%{opacity:1;} 25%,75%{opacity:0.1;} }
+@keyframes shine { 0%{left:-50%;}50%{left:120%;}100%{left:120%;} }
+@keyframes glitch { 0%{clip:rect(42px,9999px,44px,0);}20%{clip:rect(12px,9999px,80px,0);}40%{clip:rect(85px,9999px,140px,0);}60%{clip:rect(24px,9999px,90px,0);}80%{clip:rect(60px,9999px,130px,0);}100%{clip:rect(12px,9999px,100px,0);} }
+
+/* Rainbow glow animation used by clock and now buttons */
+@keyframes rainbowGlow {
+  0% { box-shadow:0 0 10px red,0 0 20px orange,0 0 30px yellow,0 0 40px green,0 0 50px blue,0 0 60px indigo,0 0 70px violet; }
+  50% { box-shadow:0 0 15px orange,0 0 25px yellow,0 0 35px green,0 0 45px blue,0 0 55px indigo,0 0 65px violet,0 0 75px red; }
+  100% { box-shadow:0 0 10px yellow,0 0 20px green,0 0 30px blue,0 0 40px indigo,0 0 50px violet,0 0 60px red,0 0 70px orange; }
+}
+/* animated rainbow flow */
+@keyframes rainbowBorder {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+/* Shine effect specifically for the slider wrapper */
+@keyframes rangeShine {
+  0% { left:-60%; opacity:0; transform: skewX(-20deg) translateX(0); }
+  10% { opacity:0.9; }
+  50% { left:120%; opacity:0.9; transform: skewX(-20deg) translateX(0); }
+  100% { left:120%; opacity:0; transform: skewX(-20deg) translateX(0); }
+}
+/* Apply unified rainbow animation to all control buttons except effect buttons */
+.minimize-btn,
+.button-reset,
+.button-copy,
+#autoMasterBtn,
+#autoIntensityBtn {
+  background: linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  animation: rainbowShift 6s linear infinite;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
+  text-shadow: 0 0 6px rgba(255,255,255,0.2);
+}
+
+.minimize-btn:hover,
+.button-reset:hover,
+.button-copy:hover,
+#autoMasterBtn:hover,
+#autoIntensityBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+/* Slight responsive tweaks */
+@media (max-width:920px){
+  .glitch{ font-size:46px; }
+  #clock{ width:calc(100% - 60px); }
+  .controls{ width:220px; }
+}
+</style>
+
+<!-- INJECTED: Rainbow switch CSS (safe add, does not remove base HTML) -->
+<style>
+/* Hide legacy Apply/Off visually (no removal) */
+#applyMasterBtn, #offMasterBtn { opacity: 0; pointer-events: none; transform: scale(.98); transition: opacity .18s; }
+/* switch container */
+/* move the rainbow switch higher, closer to the Auto Intensity button */
+.injected-master-row {
+  position: relative; /* allow fine vertical adjustments */
+  margin-top: -35px; /* negative margin moves it upward */
+  z-index: 5; /* keep it visible above nearby elements */
+}
+
+/* optional: make sure it stays properly aligned and not overlapping too much */
+#masteringInner .injected-master-row {
+  margin-left: 8px;  /* adjust horizontal offset if needed */
+}
+.injected-switch{position:relative;width:70px;height:34px;display:inline-block;}
+.injected-switch input{opacity:0;width:0;height:0;}
+.injected-switch .in-slider{position:absolute;inset:0;border-radius:34px;background:#1a1a1a;cursor:pointer;transition:all .28s ease;overflow:hidden;box-shadow:inset 0 0 6px rgba(0,0,0,0.45);}
+.injected-switch .in-slider::before{content:"";position:absolute;left:4px;bottom:4px;width:26px;height:26px;border-radius:50%;background:#bdbdbd;transition:transform .28s ease, box-shadow .28s ease;}
+/* rainbow active (fast) */
+.injected-switch input:checked + .in-slider { background: linear-gradient(270deg, red, orange, yellow, green, cyan, blue, violet, red); background-size:400% 400%; animation:injectedRainbowFast 2.5s linear infinite; box-shadow:0 0 18px rgba(255,255,255,0.18); }
+.injected-switch input:checked + .in-slider::before { transform: translateX(36px); background:#fff; box-shadow:0 0 10px rgba(255,255,255,0.55); }
+/* keyframes */
+@keyframes injectedRainbowFast { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+/* label */
+.injected-master-label{font-weight:700;color:#ddd;font-size:13px;margin-right:8px;}
+@media (max-width:420px){ .injected-switch{width:56px;height:28px;} .injected-switch .in-slider::before{width:22px;height:22px;left:3px;bottom:3px;} .injected-switch input:checked + .in-slider::before{transform:translateX(28px);} }
+</style>
+</head>
+<body>
+
+<div class="glitch" data-text="ERROR 404">ERROR 404</div>
+<p class="rainbow-blink">PAGE NOT FOUND</p>
+<div id="clock" aria-live="polite"></div>
+<div class="rainbow-text">▼ Play Sound/Music ▼</div>
+
+<div>
+  <button class="rainbow-btn" onclick="playLoudClick(playSound)">⫸ Play Sound/Music ⫷</button>
+  <button class="rainbow-btn" onclick="playLoudClick(pauseSound)">⏸ Pause ⏸</button>
+  <button class="rainbow-btn" onclick="playLoudClick(stopSound)">⏹ Stop ⏹</button>
+  <button class="rainbow-btn" onclick="playLoudClick(prevTrack)">⏮ Previous ⏮</button>
+  <button class="rainbow-btn" onclick="playLoudClick(nextTrack)">⏭ Next ⏭</button>
+</div>
+
+<!-- NEW: Mastering Panel (left of Clock Size) -->
+<div class="controls" id="masteringControls" role="dialog" aria-label="Mastering Panel" style="left:20px; top:20px;">
+  <div class="controls-header" id="masteringHeader" style="display:flex; justify-content:space-between; align-items:center;">
+    <button class="minimize-btn" id="minMasterBtnLeft" aria-expanded="true" title="Minimize Master">▼</button>
+    <span style="flex-grow:1; text-align:center; font-weight:bold;">Mastering Panel
+    (useless panel)</span>
+    <button class="minimize-btn" id="minMasterBtnRight" aria-expanded="true" title="Minimize Master">▼</button>
+  </div>
+
+  <div class="controls-inner mastering-content" id="masteringInner">
+    <!-- Input Gain -->
+    <div class="control-row">
+      <label for="masterInputGain">Gain</label>
+      <div class="range-wrap"><input id="masterInputGain" type="range" min="-20" max="20" value="-4.5" step="0.5"></div>
+      <div id="masterGainVal" class="ctrl-value">-4.5 dB</div>
+    </div>
+    <div class="control-row">
+      <label>Auto</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="button-reset" id="autoMasterBtn">Auto</button>
+      </div>
+    </div>
+
+    <!-- Original / Mastered -->
+    <div style="display:flex;gap:8px;margin:8px 0;">
+      <button class="button-reset" id="origBtn">Original</button>
+      <button class="button-reset" id="masteredBtn">Mastered</button>
+    </div>
+
+    <!-- Preset Grid -->
+    <div style="margin-top:6px;font-weight:700;color:#ddd">Presets</div>
+    <div class="preset-grid" id="presetGrid">
+      <div class="preset" data-preset="Universal">Universal</div>
+      <div class="preset" data-preset="Fire">Fire</div>
+      <div class="preset" data-preset="Clarity">Clarity</div>
+      <div class="preset" data-preset="Tape">Tape</div>
+      <div class="preset" data-preset="Natural">Natural</div>
+      <div class="preset" data-preset="Spatial">Spatial</div>
+      <div class="preset" data-preset="Cinematic">Cinematic</div>
+      <div class="preset" data-preset="Punch">Punch</div>
+    </div>
+
+    <!-- Intensity -->
+    <div style="margin-top:10px;font-weight:700;color:#ddd">Intensity</div>
+    <div class="control-row" style="margin-top:6px;">
+      <label for="intensitySlider">Power</label>
+      <div class="range-wrap"><input id="intensitySlider" type="range" min="0" max="10000" value="5000"></div>
+      <div id="intensityVal" class="ctrl-value">5000</div>
+    </div>
+    <!-- Auto Intensity -->
+    <div class="control-row" style="margin-top:6px;">
+      <label>Auto</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+      <button class="button-reset" id="autoIntensityBtn">Auto</button>
+    </div>
+</div>
+    <!-- Apply / Off -->
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="button-reset" id="applyMasterBtn">Apply</button>
+      <button class="button-copy" id="offMasterBtn">Off</button>
+    </div>
+
+  </div>
+</div>
+<!-- Movable & Minimizable ImGui-style Controls (original Clock Size) -->
+<div class="controls" id="controls" role="dialog" aria-label="Clock Controls" style="left:auto; top:20px; right:20px;">
+  <div class="controls-header" id="controlsHeader" style="display:flex; justify-content:space-between; align-items:center;">
+    <button class="minimize-btn" id="minBtnLeft" aria-expanded="true" title="Minimize Left">▼</button>
+    <span style="flex-grow:1; text-align:center; font-weight:bold;">Clock Size</span>
+    <button class="minimize-btn" id="minBtnRight" aria-expanded="true" title="Minimize Right">▼</button>
+</div>
+  <div class="controls-inner" id="controlsInner">
+    <div class="control-row">
+      <label for="widthSlider">W</label>
+      <div class="range-wrap"><input id="widthSlider" type="range" min="100" max="900" value="420" /></div>
+      <div id="widthVal" class="ctrl-value">420px</div>
+    </div>
+    <div class="control-row">
+      <label for="heightSlider">H</label>
+      <div class="range-wrap"><input id="heightSlider" type="range" min="40" max="300" value="90" /></div>
+      <div id="heightVal" class="ctrl-value">90px</div>
+    </div>
+    <div class="control-row">
+      <label for="fontSlider">F</label>
+      <div class="range-wrap"><input id="fontSlider" type="range" min="10" max="80" value="26" /></div>
+      <div id="fontVal" class="ctrl-value">26px</div>
+    </div>
+    <div class="ctrl-actions">
+      <button class="button-reset" id="resetBtn">Reset</button>
+      <button class="button-copy" id="copyCssBtn">Copy CSS</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================
+   Audio + Clock (unchanged functionality)
+   Original code preserved — NEW logic will attach to existing audio.
+   ============================ */
+
+/* Playlist */
+const playlist = [
+      "https://files.catbox.moe/nx7eeh.mp3",
+      "https://files.catbox.moe/nuko1u.mp3",
+      "https://files.catbox.moe/6hj6mn.mp3",
+      "https://files.catbox.moe/ecuset.mp3",
+      "https://files.catbox.moe/zie2os.mp3",
+      "https://files.catbox.moe/q6ol7w.mp3",
+      "https://files.catbox.moe/wiggqw.mp3",
+      "https://files.catbox.moe/vifglz.mp3",
+      "https://files.catbox.moe/4i61a0.mp3",
+      "https://files.catbox.moe/ug08vc.mp3",
+      "https://files.catbox.moe/4bfa3d.mp3",
+      "https://files.catbox.moe/72ymrh.mp3",
+      "https://files.catbox.moe/j8z3xe.mp3",
+      "https://files.catbox.moe/bn3by3.mp3",
+      "https://files.catbox.moe/hjxrn1.mp3",
+      "https://files.catbox.moe/6doabe.mp3",
+      "https://files.catbox.moe/dj7xw6.mp3",
+      "https://files.catbox.moe/1g7km6.mp3",
+      "https://files.catbox.moe/etsab7.mp3",
+      "https://files.catbox.moe/420v3h.mp3",
+      "https://files.catbox.moe/vrua65.mp3",
+      "https://files.catbox.moe/nsko23.mp3",
+      "https://files.catbox.moe/l8c8kj.mp3",
+      "https://files.catbox.moe/eu6z0p.mp3",
+      "https://files.catbox.moe/jbuo6x.mp3",
+      "https://files.catbox.moe/80ew9i.mp3",
+      "https://files.catbox.moe/clyuyq.mp3",
+      "https://files.catbox.moe/ac3ury.mp3",
+      "https://files.catbox.moe/mrbvo2.mp3",
+      "https://files.catbox.moe/e33dd2.mp3",
+      "https://files.catbox.moe/vxxp4i.mp3",
+      "https://files.catbox.moe/cu74d0.mp3",
+      "https://files.catbox.moe/57wdqi.mp3",
+      "https://files.catbox.moe/auf77t.mp3"
+];
+let currentTrack = 0;
+let audio = new Audio(playlist[currentTrack]);
+audio.crossOrigin = "anonymous";
+audio.volume = 1.0;
+
+/* Create AudioContext and simple FX chain (original) */
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const src = ctx.createMediaElementSource(audio);
+const band1 = ctx.createBiquadFilter(); band1.type="peaking"; band1.frequency.value=1500; band1.gain.value=9; band1.Q.value=0.72;
+const band2 = ctx.createBiquadFilter(); band2.type="peaking"; band2.frequency.value=200; band2.gain.value=-3.8; band2.Q.value=1.01;
+const bass = ctx.createBiquadFilter(); bass.type="lowshelf"; bass.frequency.value=100; bass.gain.value=6;
+const treble = ctx.createBiquadFilter(); treble.type="highshelf"; treble.frequency.value=6000; treble.gain.value=6;
+const panner = ctx.createStereoPanner(); panner.pan.value=0.0;
+const delay = ctx.createDelay(); delay.delayTime.value=0.25;
+const feedback = ctx.createGain(); feedback.gain.value=0.4;
+delay.connect(feedback); feedback.connect(delay);
+const echoMix = ctx.createGain(); echoMix.gain.value=0.37;
+const master = ctx.createGain(); master.gain.value=10.0;
+src.connect(band1); band1.connect(band2); band2.connect(bass); bass.connect(treble); treble.connect(panner);
+panner.connect(master); panner.connect(delay); delay.connect(echoMix); echoMix.connect(master); master.connect(ctx.destination);
+
+function loadTrack(i){ currentTrack=(i+playlist.length)%playlist.length; audio.src=playlist[currentTrack]; audio.load(); audio.play(); }
+function nextTrack(){ loadTrack(currentTrack+1); }
+function prevTrack(){ loadTrack(currentTrack-1); }
+audio.addEventListener("ended", nextTrack);
+
+/* Small click sound used on UI button presses */
+async function playLoudClick(callback){
+  const data="UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQgAAAAA/////wAAAP///wAAAP///wAAAP///w==";
+  const binary = atob(data);
+  const buffer = new ArrayBuffer(binary.length);
+  const view = new Uint8Array(buffer);
+  for(let i=0;i<binary.length;i++) view[i]=binary.charCodeAt(i);
+  const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const decoded=await audioCtx.decodeAudioData(buffer);
+  const source=audioCtx.createBufferSource(); source.buffer=decoded;
+  const gainNode=audioCtx.createGain(); gainNode.gain.value=2000.0;
+  source.connect(gainNode).connect(audioCtx.destination); source.start();
+  setTimeout(callback,360);
+}
+
+/* Basic playback controls */
+function playSound(){ ctx.resume(); audio.play(); }
+function pauseSound(){ audio.pause(); }
+function stopSound(){ audio.pause(); audio.currentTime=0; }
+
+/* ============================
+   Clock update
+   ============================ */
+function updateClock(){
+  const now = new Date();
+  const h = now.getHours().toString().padStart(2,'0');
+  const m = now.getMinutes().toString().padStart(2,'0');
+  const s = now.getSeconds().toString().padStart(2,'0');
+  document.getElementById('clock').innerText = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ============================
+   Slider bindings and actions (Clock Size)
+   ============================ */
+const widthSlider = document.getElementById('widthSlider');
+const heightSlider = document.getElementById('heightSlider');
+const fontSlider = document.getElementById('fontSlider');
+const widthVal = document.getElementById('widthVal');
+const heightVal = document.getElementById('heightVal');
+const fontVal = document.getElementById('fontVal');
+const root = document.documentElement;
+
+function setClockWidth(px){ root.style.setProperty('--clock-width', px + 'px'); widthVal.textContent = px + 'px'; }
+function setClockHeight(px){ root.style.setProperty('--clock-height', px + 'px'); heightVal.textContent = px + 'px'; }
+function setClockFont(px){ root.style.setProperty('--clock-font', px + 'px'); fontVal.textContent = px + 'px'; }
+
+setClockWidth(widthSlider.value);
+setClockHeight(heightSlider.value);
+setClockFont(fontSlider.value);
+
+widthSlider.addEventListener('input', (e)=> setClockWidth(e.target.value));
+heightSlider.addEventListener('input', (e)=> setClockHeight(e.target.value));
+fontSlider.addEventListener('input', (e)=> setClockFont(e.target.value));
+// --- FIX: Ensure Width slider dynamically updates the clock's width ---
+if (widthSlider && root) {
+  widthSlider.addEventListener("input", (e) => {
+    const px = parseFloat(e.target.value);
+    root.style.setProperty("--clock-width", px + "px");
+    widthVal.textContent = px + "px";
+    document.getElementById("clock").style.width = px + "px";
+  });
+}
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  const defaults = {w:420,h:90,f:26};
+  widthSlider.value = defaults.w; heightSlider.value = defaults.h; fontSlider.value = defaults.f;
+  setClockWidth(defaults.w); setClockHeight(defaults.h); setClockFont(defaults.f);
+// Force visual update for clock width after reset
+document.getElementById("clock").style.width = defaults.w + "px";
+});
+
+/* Copy CSS snippet to clipboard with user feedback */
+const copyBtn = document.getElementById('copyCssBtn');
+copyBtn.addEventListener('click', ()=>{
+  const cssSnippet = `:root { --clock-width: ${widthSlider.value}px; --clock-height: ${heightSlider.value}px; --clock-font: ${fontSlider.value}px; }`;
+  navigator.clipboard.writeText(cssSnippet).then(()=>{
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = 'Copied ✓';
+    setTimeout(()=> copyBtn.textContent = prev, 1500);
+  }).catch(()=> {
+    const fallback = prompt('Copy this CSS snippet:', cssSnippet);
+    if (fallback === null) {
+      alert('Copy canceled or blocked by the browser.');
+    }
+  });
+});
+
+/* ============================
+   Movable (draggable) controls for both panels
+   - Dragging is initiated from the header area only.
+   - Position is updated with pointer events for better touch support.
+   ============================ */
+function makeDraggable(headerEl, containerEl) {
+  let dragging = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  headerEl.addEventListener('pointerdown', (e)=>{
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    dragging = true;
+    containerEl.style.right = 'auto';
+    const rect = containerEl.getBoundingClientRect();
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+    containerEl.setPointerCapture && containerEl.setPointerCapture(e.pointerId);
+    headerEl.style.cursor = 'grabbing';
+  });
+  document.addEventListener('pointermove', (e)=>{
+    if (!dragging) return;
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    let left = e.clientX - dragOffsetX;
+    let top = e.clientY - dragOffsetY;
+    left = Math.max(6, Math.min(left, vw - containerEl.offsetWidth - 6));
+    top = Math.max(6, Math.min(top, vh - containerEl.offsetHeight - 6));
+    containerEl.style.left = left + 'px';
+    containerEl.style.top = top + 'px';
+  });
+  document.addEventListener('pointerup', ()=>{
+    dragging = false;
+    headerEl.style.cursor = 'grab';
+  });
+}
+
+/* Apply draggable to both panels */
+const controls = document.getElementById('controls');
+const header = document.getElementById('controlsHeader');
+makeDraggable(header, controls);
+
+const masteringControls = document.getElementById('masteringControls');
+const masteringHeader = document.getElementById('masteringHeader');
+makeDraggable(masteringHeader, masteringControls);
+
+/* ============================
+   Minimize / Restore behavior for both panels
+   ============================ */
+function attachMinimize(minLeftBtn, minRightBtn, container, inner) {
+  function toggleMinimize() {
+    const isMin = container.classList.toggle('minimized');
+    if (isMin) {
+      inner.style.display = 'none';
+      minLeftBtn.textContent = '▶';
+      minRightBtn.textContent = '◀';
+    } else {
+      inner.style.display = '';
+      minLeftBtn.textContent = '▼';
+      minRightBtn.textContent = '▼';
+    }
+  }
+  minLeftBtn.addEventListener('click', toggleMinimize);
+  minRightBtn.addEventListener('click', toggleMinimize);
+  // double-click header toggles
+  container.querySelector('.controls-header').addEventListener('dblclick', toggleMinimize);
+}
+
+attachMinimize(document.getElementById('minBtnLeft'), document.getElementById('minBtnRight'), controls, document.getElementById('controlsInner'));
+attachMinimize(document.getElementById('minMasterBtnLeft'), document.getElementById('minMasterBtnRight'), masteringControls, document.getElementById('masteringInner'));
+
+/* Make keyboard accessible: press Escape to restore if minimized */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (controls.classList.contains('minimized')) {
+      document.getElementById('minBtnLeft').click();
+    }
+    if (masteringControls.classList.contains('minimized')) {
+      document.getElementById('minMasterBtnLeft').click();
+    }
+  }
+});
+
+/* Ensure inputs remain usable on touch by preventing drag when interacting */
+document.querySelectorAll('.controls-inner').forEach(innerEl=>{
+  ['pointerdown','pointerup'].forEach(ev=>{
+    innerEl.addEventListener(ev, (e)=> e.stopPropagation());
+  });
+});
+
+/* ============================
+   NEW: Mastering WebAudio Chain (created but not active until Apply)
+   - We create a parallel chain and switch connections when Apply/Off are used.
+   ============================ */
+
+/* Mastering nodes */
+const m_preGain = ctx.createGain(); m_preGain.gain.value = 1.0;
+const m_eqLo = ctx.createBiquadFilter(); m_eqLo.type = 'lowshelf'; m_eqLo.frequency.value = 120; m_eqLo.gain.value = 0;
+const m_eqMid = ctx.createBiquadFilter(); m_eqMid.type = 'peaking'; m_eqMid.frequency.value = 1000; m_eqMid.Q.value = 1; m_eqMid.gain.value = 0;
+const m_eqHi = ctx.createBiquadFilter(); m_eqHi.type = 'highshelf'; m_eqHi.frequency.value = 6000; m_eqHi.gain.value = 0;
+const m_comp = ctx.createDynamicsCompressor(); // compressor for mastering
+m_comp.threshold.value = -24;
+m_comp.knee.value = 30;
+m_comp.ratio.value = 2.5;
+m_comp.attack.value = 0.003;
+m_comp.release.value = 0.25;
+const m_stereo = ctx.createStereoPanner(); m_stereo.pan.value = 0;
+const m_reverbDelay = ctx.createDelay(); m_reverbDelay.delayTime.value = 0.12;
+const m_reverbFB = ctx.createGain(); m_reverbFB.gain.value = 0.2;
+m_reverbDelay.connect(m_reverbFB); m_reverbFB.connect(m_reverbDelay);
+const m_wetGain = ctx.createGain(); m_wetGain.gain.value = 0.0; // initially 0 until Apply
+const m_masterGain = ctx.createGain(); m_masterGain.gain.value = 1.0; // post mastering gain control
+
+/* chain: preGain -> eqLo -> eqMid -> eqHi -> comp -> splitter for wet/dry -> wet->reverb->wetGain->stereo->masterGain -> master */
+m_preGain.connect(m_eqLo); m_eqLo.connect(m_eqMid); m_eqMid.connect(m_eqHi); m_eqHi.connect(m_comp);
+/* wet path */
+m_comp.connect(m_reverbDelay); m_reverbDelay.connect(m_wetGain); m_wetGain.connect(m_stereo); m_stereo.connect(m_masterGain);
+/* dry path (we will handle switching by reconnecting panner) */
+m_comp.connect(m_masterGain); // direct to master gain too
+
+/* helper flags */
+let masteringApplied = false;
+let currentPreset = 'Universal';
+
+/* function to apply preset parameters based on name + intensity */
+function configurePreset(name, intensity) {
+  // intensity: 0..100 -> map to multiplier 0..1
+  const mul = intensity / 10000;
+  // default neutral values
+  let loGain=0, midGain=0, hiGain=0, compThresh=-24, compRatio=2, wet=0, pan=0, postGain=1;
+  switch(name) {
+    case 'Universal':
+      loGain = 1 * mul;
+      midGain = 0.5 * mul;
+      hiGain = 1 * mul;
+      compThresh = -22 + (1 - mul)*6;
+      compRatio = 1.8 + mul*1.2;
+      wet = 0.08 * mul;
+      break;
+    case 'Fire':
+      loGain = 3 * mul;
+      midGain = 2 * mul;
+      hiGain = 0.8 * mul;
+      compThresh = -18 + (1 - mul)*4;
+      compRatio = 2.5 + mul*1.5;
+      wet = 0.06 * mul;
+      break;
+    case 'Clarity':
+      loGain = 0.4 * mul;
+      midGain = 0.6 * mul;
+      hiGain = 3.5 * mul;
+      compThresh = -24 + (1 - mul)*6;
+      compRatio = 1.6 + mul*1.0;
+      wet = 0.04 * mul;
+      break;
+    case 'Tape':
+      loGain = 1.6 * mul;
+      midGain = 0.9 * mul;
+      hiGain = 1.2 * mul;
+      compThresh = -20 + (1 - mul)*5;
+      compRatio = 1.9 + mul*1.1;
+      wet = 0.08 * mul;
+      // add slight harmonic saturation by small gain to pre
+      postGain = 1 + 0.06*mul;
+      break;
+    case 'Natural':
+      loGain = 0.6 * mul;
+      midGain = 0.2 * mul;
+      hiGain = 0.5 * mul;
+      compThresh = -26 + (1 - mul)*6;
+      compRatio = 1.4 + mul*0.8;
+      wet = 0.03 * mul;
+      break;
+    case 'Spatial':
+      loGain = 0.3 * mul;
+      midGain = 0.4 * mul;
+      hiGain = 0.9 * mul;
+      compThresh = -24 + (1 - mul)*6;
+      compRatio = 1.6 + mul*1.0;
+      wet = 0.12 * mul;
+      pan = 0.18 * mul; // slight widen
+      break;
+    case 'Cinematic':
+      loGain = 1.0 * mul;
+      midGain = 0.8 * mul;
+      hiGain = 1.1 * mul;
+      compThresh = -20 + (1 - mul)*5;
+      compRatio = 2.2 + mul*1.3;
+      wet = 0.22 * mul; // more reverb
+      break;
+    case 'Punch':
+      loGain = 3.2 * mul;
+      midGain = 1.8 * mul;
+      hiGain = 0.6 * mul;
+      compThresh = -16 + (1 - mul)*4;
+      compRatio = 3.2 + mul*1.8;
+      wet = 0.05 * mul;
+      postGain = 1 + 0.08*mul;
+      break;
+    default:
+      break;
+  }
+  // set node parameters
+  m_eqLo.gain.value = loGain;
+  m_eqMid.gain.value = midGain;
+  m_eqHi.gain.value = hiGain;
+  m_comp.threshold.value = compThresh;
+  m_comp.ratio.value = compRatio;
+  m_wetGain.gain.value = wet;
+  m_stereo.pan.value = pan;
+  m_masterGain.gain.value = postGain;
+}
+
+/* functions to switch connections: connect panner -> mastering chain -> master (disconnect original), and vice versa */
+function enableMasteringChain() {
+  if (masteringApplied) return;
+  try {
+    // disconnect panner -> master (original direct connection)
+    try { panner.disconnect(master); } catch(e){}
+    // connect panner -> m_preGain
+    panner.connect(m_preGain);
+    // ensure final master gain connects into original master node
+    m_masterGain.connect(master);
+    masteringApplied = true;
+    console.log('Mastering enabled');
+  } catch (e) {
+    console.error('enableMasteringChain error', e);
+  }
+}
+function disableMasteringChain() {
+  if (!masteringApplied) return;
+  try {
+    // disconnect panner -> m_preGain
+    try { panner.disconnect(m_preGain); } catch(e){}
+    // disconnect m_masterGain -> master
+    try { m_masterGain.disconnect(master); } catch(e){}
+    // reconnect panner -> master (original)
+    panner.connect(master);
+    masteringApplied = false;
+    console.log('Mastering disabled');
+  } catch (e) {
+    console.error('disableMasteringChain error', e);
+  }
+}
+
+/* ============================
+   UI bindings for Mastering Panel
+   ============================ */
+const masterGainSlider = document.getElementById('masterInputGain');
+const masterGainVal = document.getElementById('masterGainVal');
+const autoMasterBtn = document.getElementById('autoMasterBtn');
+const presetGrid = document.getElementById('presetGrid');
+const intensitySlider = document.getElementById('intensitySlider');
+const intensityVal = document.getElementById('intensityVal');
+const applyBtn = document.getElementById('applyMasterBtn');
+const offBtn = document.getElementById('offMasterBtn');
+const origBtn = document.getElementById('origBtn');
+const masteredBtn = document.getElementById('masteredBtn');
+
+masterGainVal.textContent = masterGainSlider.value + ' dB';
+
+masterGainSlider.addEventListener('input', (e)=>{
+  masterGainVal.textContent = e.target.value + ' dB';
+  // change preGain gain value (convert dB to linear)
+  const db = parseFloat(e.target.value);
+  const lin = Math.pow(10, db/20);
+  m_preGain.gain.value = lin;
+});
+// when Auto button is clicked, display the actual gain value instead of the word "Auto"
+autoMasterBtn.addEventListener('click', () => {
+  // simple auto-gain: normalize preGain to a safe value
+  m_preGain.gain.value = 1.0;
+  masterGainSlider.value = -4.5;
+
+  // get the current slider value as the gain in dB
+  const gainValue = parseFloat(masterGainSlider.value) || -4.5;
+
+  // format gain value nicely
+  const formattedGain = `${gainValue.toFixed(1)} dB`;
+
+  // update the text display dynamically
+  masterGainVal.textContent = formattedGain;
+});
+
+
+/* preset selection */
+presetGrid.addEventListener('click', (e)=>{
+  const el = e.target.closest('.preset');
+  if (!el) return;
+  // toggle selection
+  [...presetGrid.querySelectorAll('.preset')].forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected');
+  currentPreset = el.dataset.preset;
+});
+
+/* intensity */
+intensitySlider.addEventListener('input', (e)=>{
+  intensityVal.textContent = e.target.value;
+});
+/* Auto Intensity Button */
+const autoIntensityBtn = document.getElementById('autoIntensityBtn');
+
+if (autoIntensityBtn) {
+  autoIntensityBtn.addEventListener('click', () => {
+    intensitySlider.value = 5000; // default value same as BandLab-style auto
+    intensityVal.textContent = '5000';
+
+    // Reapply current preset with default intensity
+    configurePreset(currentPreset, 5000);
+
+    // Optional feedback animation on button
+    autoIntensityBtn.textContent = 'Auto ✓';
+    setTimeout(() => autoIntensityBtn.textContent = 'Auto', 1000);
+  });
+}
+/* Original / Mastered preview buttons (simple toggle demo) */
+origBtn.addEventListener('click', ()=>{
+  // bypass mastering chain for preview
+  disableMasteringChain();
+  origBtn.textContent = 'Original ✓';
+  masteredBtn.textContent = 'Mastered';
+});
+masteredBtn.addEventListener('click', ()=>{
+  // apply but do not permanently set unless Apply pressed
+  enableMasteringChain();
+  masteredBtn.textContent = 'Mastered ✓';
+  origBtn.textContent = 'Original';
+});
+
+/* Apply button: configure preset and enable chain */
+applyBtn.addEventListener('click', ()=>{
+  const intensity = parseInt(intensitySlider.value||50,10);
+  configurePreset(currentPreset, intensity);
+  enableMasteringChain();
+  // show feedback
+  applyBtn.textContent = 'Applied ✓';
+  setTimeout(()=> applyBtn.textContent = 'Apply', 1200);
+});
+
+/* Off button: disable chain and reset some params */
+offBtn.addEventListener('click', ()=>{
+  disableMasteringChain();
+  // reset wet and master gain to neutral
+  m_wetGain.gain.value = 0.0;
+  m_masterGain.gain.value = 1.0;
+  // UI feedback
+  offBtn.textContent = 'Off ✓';
+  setTimeout(()=> offBtn.textContent = 'Off', 900);
+  // clear preset selection visual
+  [...presetGrid.querySelectorAll('.preset')].forEach(p=>p.classList.remove('selected'));
+});
+
+/* Initialize with Universal selected */
+[...presetGrid.querySelectorAll('.preset')].forEach(p=>{
+  if (p.dataset.preset === 'Universal') p.classList.add('selected');
+});
+
+/* ============================
+   Accessibility & small helpers
+   ============================ */
+/* prevent dragging when interacting with input elements inside mastering panel */
+document.getElementById('masteringInner').addEventListener('pointerdown', (e)=> e.stopPropagation());
+
+</script>
+
+<!-- INJECTED: Rainbow switch JS (adds toggle without modifying base HTML) -->
+<script>
+(function(){
+  // safe selectors for masteringInner
+  const masteringInner = document.getElementById('masteringInner') || document.querySelector('#masteringControls .mastering-content') || document.querySelector('#masteringInner');
+  if(!masteringInner){
+    console.warn('Injected switch: masteringInner not found. Injection aborted.');
+    return;
+  }
+
+  // create row only if not already injected
+  if(document.getElementById('injectedMasterSwitch')) return;
+
+  const row = document.createElement('div');
+  row.className = 'injected-master-row';
+  const lbl = document.createElement('div');
+  lbl.className = 'injected-master-label';
+  lbl.textContent = 'Enable/Disable Mastering';
+  const swWrap = document.createElement('label');
+  swWrap.className = 'injected-switch';
+  swWrap.innerHTML = '<input type="checkbox" id="injectedMasterSwitch"><span class="in-slider"></span>';
+  row.appendChild(lbl);
+  row.appendChild(swWrap);
+  // append near end of masteringInner
+  masteringInner.appendChild(row);
+
+  const injectedSwitch = document.getElementById('injectedMasterSwitch');
+  const intensitySlider = document.getElementById('intensitySlider') || document.getElementById('intensity') || null;
+  // functions that may exist in base file
+  const configurePresetFn = window.configurePreset;
+  const enableFn = window.enableMasteringChain || window.enableMastering;
+  const disableFn = window.disableMasteringChain || window.disableMastering;
+
+  function readIntensity(){ try{ return parseInt(intensitySlider?.value || 5000, 10); }catch(e){ return 5000; } }
+
+  injectedSwitch.addEventListener('change', function(){
+    const on = injectedSwitch.checked;
+    const intensity = readIntensity();
+    const preset = window.currentPreset || 'Universal';
+    if(on){
+      if(typeof configurePresetFn === 'function'){ try{ configurePresetFn(preset, intensity); }catch(e){ console.warn('configurePreset error', e); } }
+      if(typeof enableFn === 'function'){ try{ enableFn(); }catch(e){ console.warn('enableMastering error', e); } }
+    }else{
+      if(typeof disableFn === 'function'){ try{ disableFn(); }catch(e){ console.warn('disableMastering error', e); } }
+    }
+    // keep global flag if present
+    try{ if(typeof window.masteringApplied !== 'undefined') window.masteringApplied = !!on; }catch(e){}
+  });
+
+  // If presets are clickable elements, keep switch behavior apply-on-preset-change
+  document.addEventListener('click', function(ev){
+    const el = ev.target.closest && ev.target.closest('.preset');
+    if(el && injectedSwitch.checked){
+      const intensity = readIntensity();
+      if(typeof configurePresetFn === 'function'){ try{ configurePresetFn(el.dataset.preset || window.currentPreset || 'Universal', intensity); }catch(e){console.warn(e);} }
+      if(typeof enableFn === 'function'){ try{ enableFn(); }catch(e){console.warn(e);} }
+    }
+  }, true);
+
+  // sync state periodically from global flag if base code updates it
+  setInterval(function(){
+    try{
+      if(typeof window.masteringApplied !== 'undefined'){
+        injectedSwitch.checked = !!window.masteringApplied;
+      }
+    }catch(e){}
+  }, 400);
+
+})(); </script>
+<!-- END INJECTED -->
+<script>
+/* =======================================================
+   FINAL MERGED VERSION — FIXED SIDE LAYOUT + BELOW LAYOUT
+   includes:
+   - fixed spacing for side mode
+   - customizable spacing
+   - improved grid template
+   - rainbow shine buttons
+   ======================================================= */
+
+(function(){
+
+/* =======================================================
+   CSS Injection (Improved layout)
+   ======================================================= */
+const css = `
+:root {
+  /* === CUSTOMIZABLE SIDE MODE === */
+  --side-gap: 9px;              /* jarak antar elemen */
+  --side-col-minus: 32px;       /* lebar tombol minus */
+  --side-col-plus: 32px;        /* lebar tombol plus */
+  --side-label-width: 50px;     /* lebar kolom label */
+
+  /* === BUTTON STYLE === */
+  --incdec-size: 24px;
+  --incdec-radius: 14px;
+  --incdec-font-size: 17px;
+  --incdec-bg-size: 400% 400%;
+}
+
+/* =======================================================
+   Rainbow Animation
+   ======================================================= */
+@keyframes injectRainbowShift {
+  0% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+  100% { background-position:0% 50%; }
+}
+
+/* =======================================================
+   Button Style
+   ======================================================= */
+.incdec-btn{
+  width:var(--incdec-size);
+  height:var(--incdec-size);
+  min-width:var(--incdec-size);
+  min-height:var(--incdec-size);
+  border:none;
+  border-radius:var(--incdec-radius);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  font-size:var(--incdec-font-size);
+  font-weight:700;
+  color:white;
+  background:linear-gradient(270deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size:var(--incdec-bg-size);
+  animation:injectRainbowShift 6s linear infinite;
+  transition:.15s ease;
+}
+.incdec-btn:hover{ transform:scale(1.10); }
+.incdec-btn:active{ transform:scale(1.18); }
+
+/* =======================================================
+   SIDE LAYOUT (improved)
+   ======================================================= */
+.incdec-row-side{
+  display:grid;
+  grid-template-columns:
+    var(--side-col-minus)
+    var(--side-label-width)
+    1fr
+    var(--side-col-plus);
+  gap:var(--side-gap);
+  align-items:center;
+  width:100%;
+}
+
+/* =======================================================
+   BELOW LAYOUT (unchanged)
+   ======================================================= */
+.incdec-col{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.incdec-row-below{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* =======================================================
+   Mid wrapper — slider + value
+   ======================================================= */
+.incdec-mid{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  width:100%;
+}
+.incdec-mid .range-wrap{
+  flex:1;
+}
+
+/* Label */
+.incdec-label{
+  color:white;
+  font-weight:700;
+  font-size:14px;
+}
+
+/* Value */
+.incdec-value{
+  min-width:58px;
+  text-align:right;
+  font-family:"JetBrains Mono", monospace;
+  color:white;
+}
+`;
+
+if(!document.getElementById("incdec-style")){
+  const st=document.createElement("style");
+  st.id="incdec-style";
+  st.textContent=css;
+  document.head.appendChild(st);
+}
+
+/* =======================================================
+   Helpers
+   ======================================================= */
+function $(id){ return document.getElementById(id); }
+function makeBtn(sign){
+  const b=document.createElement("button");
+  b.className="incdec-btn";
+  b.textContent=sign;
+  return b;
+}
+
+/* =======================================================
+   Main Injection Function
+   ======================================================= */
+function injectFor(sliderId,valueId,labelText,step=1,layout="side"){
+  
+  const slider=$(sliderId);
+  const value=$(valueId);
+  if(!slider || !value) return;
+
+  const row = slider.closest(".control-row");
+  if(!row || row.dataset.incdecDone=="1") return;
+  row.dataset.incdecDone="1";
+
+  const oldLabel=row.querySelector("label");
+  if(oldLabel) oldLabel.style.display="none";
+
+  const minus=makeBtn("−");
+  const plus =makeBtn("+");
+
+  const label=document.createElement("div");
+  label.className="incdec-label";
+  label.textContent=labelText;
+
+  const wrap=slider.closest(".range-wrap");
+  const mid=document.createElement("div");
+  mid.className="incdec-mid";
+  mid.appendChild(wrap);
+  value.classList.add("incdec-value");
+  mid.appendChild(value);
+
+  /* ===================================================
+       SIDE MODE (FIXED)
+     =================================================== */
+  if(layout==="side"){
+    const side=document.createElement("div");
+    side.className="incdec-row-side";
+
+    side.appendChild(minus);
+    side.appendChild(label);
+    side.appendChild(mid);
+    side.appendChild(plus);
+
+    row.innerHTML="";
+    row.appendChild(side);
+  }
+
+  /* ===================================================
+       BELOW MODE (unchanged)
+     =================================================== */
+  else {
+    const col=document.createElement("div");
+    col.className="incdec-col";
+
+    const t=document.createElement("div");
+    t.style.display="flex";
+    t.style.gap="8px";
+    t.style.alignItems="center";
+    t.appendChild(label);
+    t.appendChild(mid);
+
+    const b=document.createElement("div");
+    b.className="incdec-row-below";
+    b.appendChild(minus);
+    b.appendChild(plus);
+
+    col.appendChild(t);
+    col.appendChild(b);
+
+    row.innerHTML="";
+    row.appendChild(col);
+  }
+
+  /* ===================================================
+     Logic tombol + dan –
+     =================================================== */
+  function apply(d){
+    const size = parseFloat(slider.step || step);
+    slider.value = parseFloat(slider.value) + (size*d);
+    slider.dispatchEvent(new Event("input"));
+  }
+
+  minus.onclick=()=>apply(-1);
+  plus.onclick =()=>apply(+1);
+}
+
+/* =======================================================
+   Apply to all sliders
+   ======================================================= */
+const mode="below"; // you can switch to "side/below"
+injectFor("masterInputGain","masterGainVal","Gain",0.5,mode);
+injectFor("intensitySlider","intensityVal","Power",100,mode);
+
+injectFor("widthSlider","widthVal","W",10,mode);
+injectFor("heightSlider","heightVal","H",5,mode);
+injectFor("fontSlider","fontVal","F",1,mode);
+
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log(`Service Worker registered: ${reg.scope}`);
+      })
+      .catch(err => {
+        console.error('Service Worker registration failed:', err);
+      });
+  });
+}
+</script>
+</body>
+</html>
